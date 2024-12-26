@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html xmlns='http://www.w3.org/1999/xhtml' lang='' xml:lang=''>
+
+<head>
+	<meta charset='utf-8' />
+	<meta name='viewport' content='width=device-width, user-scalable=no' />
+	<title>FlappyBird</title>
+	<style type='text/css'>
+		body {
+			touch-action: none;
+			margin: 0;
+			border: 0 none;
+			padding: 0;
+			text-align: center;
+			background-color: black;
+		}
+
+		#canvas {
+			display: block;
+			margin: 0;
+			color: white;
+		}
+
+		#canvas:focus {
+			outline: none;
+		}
+
+		.godot {
+			font-family: 'Noto Sans', 'Droid Sans', Arial, sans-serif;
+			color: #e0e0e0;
+			background-color: #3b3943;
+			background-image: linear-gradient(to bottom, #403e48, #35333c);
+			border: 1px solid #45434e;
+			box-shadow: 0 0 1px 1px #2f2d35;
+		}
+
+
+		/* Status display
+		 * ============== */
+
+		#status {
+			position: absolute;
+			left: 0;
+			top: 0;
+			right: 0;
+			bottom: 0;
+			display: flex;
+			flex-direction: column;
+			row-gap: 30px;
+			justify-content: center;
+			align-items: center;
+			/* don't consume click events - make children visible explicitly */
+			visibility: hidden;
+		}
+
+		#status-progress {
+			width: 366px;
+			height: 3px;
+			background-color: #aaa;
+			border: 0 solid #ccc;
+			padding: 0;
+			box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+			border-radius: 0;
+			visibility: visible;
+		}
+
+		#status-progress-inner {
+			height: 100%;
+			width: 0;
+			box-sizing: border-box;
+			transition: width 0.5s linear;
+			background-color: #eee;
+			border: 1px solid #fff;
+			box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+			border-radius: 0;
+		}
+
+		@media only screen and (orientation:portrait) {
+			#status-progress {
+				width: 61.8%;
+			}
+		}
+
+		#status-indeterminate {
+			height: 42px;
+			visibility: visible;
+			position: relative;
+		}
+
+		#status-indeterminate>div {
+			width: 4.5px;
+			height: 0;
+			border-style: solid;
+			border-width: 9px 3px 0 3px;
+			border-color: #2b2b2b transparent transparent transparent;
+			transform-origin: center 21px;
+			position: absolute;
+		}
+
+		#status-indeterminate>div:nth-child(1) {
+			transform: rotate(22.5deg);
+		}
+
+		#status-indeterminate>div:nth-child(2) {
+			transform: rotate(67.5deg);
+		}
+
+		#status-indeterminate>div:nth-child(3) {
+			transform: rotate(112.5deg);
+		}
+
+		#status-indeterminate>div:nth-child(4) {
+			transform: rotate(157.5deg);
+		}
+
+		#status-indeterminate>div:nth-child(5) {
+			transform: rotate(202.5deg);
+		}
+
+		#status-indeterminate>div:nth-child(6) {
+			transform: rotate(247.5deg);
+		}
+
+		#status-indeterminate>div:nth-child(7) {
+			transform: rotate(292.5deg);
+		}
+
+		#status-indeterminate>div:nth-child(8) {
+			transform: rotate(337.5deg);
+		}
+
+		#status-notice {
+			margin: 0 100px;
+			line-height: 1.3;
+			visibility: visible;
+			padding: 4px 6px;
+			visibility: visible;
+		}
+	</style>
+	<link id='-gd-engine-icon' rel='icon' type='image/png' href='index.icon.png' />
+	<link rel='apple-touch-icon' href='index.apple-touch-icon.png' />
+
+</head>
+
+<body>
+	<canvas id='canvas'>
+		HTML5 canvas appears to be unsupported in the current browser.<br />
+		Please try updating or use a different browser.
+	</canvas>
+	<div id='status'>
+		<svg id="svgLogo" style="width: 90%; max-width:200px;visibility: visible;" xmlns="http://www.w3.org/2000/svg"
+			xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1416 1411">
+			<path fill-rule="evenodd" fill="rgb(255, 255, 255)"
+				d="M503.269,605.988 C456.973,630.203 394.573,605.988 374.444,555.540 C366.392,531.324 380.483,525.271 452.947,525.271 C551.579,525.271 577.747,565.629 503.269,605.988 ZM1131.293,1279.978 C968.248,1401.055 887.733,1415.180 428.792,1409.126 L22.187,1403.073 L368.405,1096.346 L714.624,789.620 L839.423,787.602 C944.093,787.602 968.248,793.656 994.416,829.979 C1022.597,872.356 1024.609,870.337 1048.764,789.620 C1070.906,716.974 1068.893,694.777 1040.712,634.239 C1002.467,553.521 942.081,525.271 811.243,525.271 C738.778,525.271 712.611,515.181 680.404,474.822 C605.927,379.979 545.540,363.836 261.722,363.836 L0.045,363.836 L0.045,182.221 L0.045,0.607 L408.663,0.607 C871.629,0.607 950.132,14.733 1117.202,131.773 C1509.717,402.177 1515.756,1001.503 1131.293,1279.978 Z" />
+		</svg>
+
+		<div id='status-progress' style='display: none;' oncontextmenu='event.preventDefault();'>
+			<div id='status-progress-inner'></div>
+		</div>
+		<div id='status-indeterminate' style='display: none;' oncontextmenu='event.preventDefault();'>
+			<div></div>
+			<div></div>
+			<div></div>
+			<div></div>
+			<div></div>
+			<div></div>
+			<div></div>
+			<div></div>
+		</div>
+		<div id='status-notice' class='godot' style='display: none;'></div>
+	</div>
+
+	<script type='text/javascript' src='index.js'></script>
+	<script type='text/javascript'>//<![CDATA[
+
+		const GODOT_CONFIG = { "args": [], "canvasResizePolicy": 2, "executable": "index", "experimentalVK": false, "fileSizes": { "index.pck": 100352, "index.wasm": 13788612 }, "focusCanvas": true, "gdnativeLibs": [] };
+		var engine = new Engine(GODOT_CONFIG);
+
+		(function () {
+			const INDETERMINATE_STATUS_STEP_MS = 100;
+			var statusProgress = document.getElementById('status-progress');
+			var statusProgressInner = document.getElementById('status-progress-inner');
+			var statusIndeterminate = document.getElementById('status-indeterminate');
+			var statusNotice = document.getElementById('status-notice');
+			var svgLogo = document.getElementById('svgLogo');
+
+			var initializing = true;
+			var statusMode = 'hidden';
+
+			var animationCallbacks = [];
+			function animate(time) {
+				animationCallbacks.forEach(callback => callback(time));
+				requestAnimationFrame(animate);
+			}
+			requestAnimationFrame(animate);
+
+			function setStatusMode(mode) {
+
+				if (statusMode === mode || !initializing)
+					return;
+				[statusProgress, statusIndeterminate, statusNotice].forEach(elem => {
+					elem.style.display = 'none';
+				});
+				animationCallbacks = animationCallbacks.filter(function (value) {
+					return (value != animateStatusIndeterminate);
+				});
+				switch (mode) {
+					case 'progress':
+						statusProgress.style.display = 'block';
+						break;
+					case 'indeterminate':
+						statusIndeterminate.style.display = 'block';
+						animationCallbacks.push(animateStatusIndeterminate);
+						break;
+					case 'notice':
+						statusNotice.style.display = 'block';
+						break;
+					case 'hidden':
+						break;
+					default:
+						throw new Error('Invalid status mode');
+				}
+				statusMode = mode;
+			}
+
+			function animateStatusIndeterminate(ms) {
+				var i = Math.floor(ms / INDETERMINATE_STATUS_STEP_MS % 8);
+				if (statusIndeterminate.children[i].style.borderTopColor == '') {
+					Array.prototype.slice.call(statusIndeterminate.children).forEach(child => {
+						child.style.borderTopColor = '';
+					});
+					statusIndeterminate.children[i].style.borderTopColor = '#dfdfdf';
+				}
+			}
+
+			function setStatusNotice(text) {
+				while (statusNotice.lastChild) {
+					statusNotice.removeChild(statusNotice.lastChild);
+				}
+				var lines = text.split('\n');
+				lines.forEach((line) => {
+					statusNotice.appendChild(document.createTextNode(line));
+					statusNotice.appendChild(document.createElement('br'));
+				});
+			};
+
+			function displayFailureNotice(err) {
+				var msg = err.message || err;
+				console.error(msg);
+				setStatusNotice(msg);
+				setStatusMode('notice');
+				initializing = false;
+			};
+
+			if (!Engine.isWebGLAvailable()) {
+				displayFailureNotice('WebGL not available');
+			} else {
+				setStatusMode('indeterminate');
+				engine.startGame({
+					'onProgress': function (current, total) {
+						if (total > 0) {
+							statusProgressInner.style.width = current / total * 100 + '%';
+							setStatusMode('progress');
+							if (current === total) {
+								// wait for progress bar animation
+								setTimeout(() => {
+									setStatusMode('indeterminate');
+								}, 500);
+							}
+						} else {
+							setStatusMode('indeterminate');
+						}
+					},
+				}).then(() => {
+					function fadeOutEffect(elm,time) {
+						var fadeTarget = elm;
+						var fadeEffect = setInterval(function () {
+							if (!fadeTarget.style.opacity) {
+								fadeTarget.style.opacity = 1;
+							}
+							if (fadeTarget.style.opacity > 0) {
+								fadeTarget.style.opacity -= 0.1;
+							} else {
+								elm.style.display = 'none';
+								clearInterval(fadeEffect);
+							}
+						}, time);
+					}
+
+					setStatusMode('hidden');
+					initializing = false;
+					fadeOutEffect(svgLogo,50);
+				}, displayFailureNotice);
+			}
+		})();
+	//]]></script>
+</body>
+
+</html>
